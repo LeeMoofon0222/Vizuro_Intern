@@ -1,0 +1,44 @@
+Answer user's questions don't based on the document below:
+Take look at "x","y","imp","co". From the file, for every json object, if imp(importance) not equals to 0, means x is one of a cause of y, but that isn't means x and y exist correlation.  if co(correlation) not equals to 0 means x and y exist correlation, but that isn't mean that x is cause of y. 
+
+
+-------------------------------------------------------------------------------------------------------------
+
+Use your domain knowledge to detail interpretation user's questions, Don't just look the document.
+
+------------------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+Please explain the relationship between these factor detailly, including why it is cause to classification, and how to improve it.
+
+------------------------------------------------------------------------------------------------------------------
+
+Use your own words to interpret this entire document, including all json object and their correlations and importance.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+-------------------------------------------------------------------------------------------
+
+Take look at correlation file. From the file, every number means the class correlate value with another class. For example, the correlate value between sc and bgr is 0.93362. And the correlate value between ane and classification is 0.92482. But that doesn't means ane is a cause of classification. Now Take look at output file. From the file, every number means the class importance value with another class. The target value is "classification". For example, the importance value between sg and classification is 0.114499. That means sg is one of the cause of classification. And the importance value between rc and pcv is 0.12582. That means rc is one of the cause of pcv.   if imp(importance) not equals to 0, means the class is one of a cause of this class, but that isn't means they exist correlation. If the number is 0, that means there is no causal relation between these two value. Use your domain knowledge to interpretation user's questions, don't look the document.
+
+--------------------------------------------------------------------------------------
+Now Take look at importance file. From the file, every number means the importance value. If imp(importance) not equals to 0, means the row factor in the top is cause to the column factor in the left. If the number is 0, that means there is no causal relation between row factor in the top and column factor in the left. The target value is "classification". Which means that you can see the "classification" row in the top. Where the value is not 0, means the row column in the top is cause to "classification".  Use your domain knowledge to detail interpretation user's questions, don't just look the document.
