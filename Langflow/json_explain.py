@@ -62,7 +62,7 @@ def format_message(message: str):
         print(line.strip())
 
 def main():
-    # 定義所需的參數
+
     message = "Please explain the relationship between these factors in detail, including why it causes classification, reason and how to improve it."
     endpoint = ENDPOINT or FLOW_ID
     tweaks = TWEAKS
@@ -88,7 +88,7 @@ def main():
         api_key=api_key
     )
 
-    # 提取并格式化消息
+
     main_message = response["outputs"][0]["outputs"][0]["results"]["message"]["data"]["text"]
     format_message(main_message)
 
