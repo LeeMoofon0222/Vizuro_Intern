@@ -3,32 +3,20 @@ import requests
 import time
 from urllib.parse import urlparse, parse_qs
 import random
-import openai
+from openai import OpenAI
+import os
+from dotenv import load_dotenv
 
-url = 'https://www.amazon.com/acer-Wireless-Non-Stop-Bluetooth5-3-Headphones/dp/B0CLYH2DRN/ref=sxin_16_sbv_search_btf?_encoding=UTF8&content-id=amzn1.sym.5cde1a09-4942-4242-87c5-e66d2d3b6a3c%3Aamzn1.sym.5cde1a09-4942-4242-87c5-e66d2d3b6a3c&cv_ct_cx=gaming%2Bheadsets&dib=eyJ2IjoiMSJ9.TeAUh4HrECihko2sKZE51A.xRjBuwPbdpYMBu2C2UUuuHjCaoLfZyIWg3SkYJrDOj4&dib_tag=se&keywords=gaming%2Bheadsets&pd_rd_i=B0CLYH2DRN&pd_rd_r=4661825c-41b4-4c76-9336-50c5cab08f62&pd_rd_w=nRXZa&pd_rd_wg=xcMyO&pf_rd_p=5cde1a09-4942-4242-87c5-e66d2d3b6a3c&pf_rd_r=V1EE101AZPK8M3J5934A&qid=1720420093&sbo=RZvfv%2F%2FHxDF%2BO5021pAnSA%3D%3D&sr=1-1-5190daf0-67e3-427c-bea6-c72c1df98776&th=1'
 
-parsed_url = urlparse(url)
-query_params = parse_qs(parsed_url.query)
-productID = query_params.get('pd_rd_i', [None])[0]
 
-openai.api_key = 'OPENAI_API_KEY'
-
-reviewsUrl = [
-              f'https://www.amazon.com/product-reviews/{productID}/ref=cm_cr_unknown?ie=UTF8&filterByStar=five_star&reviewerType=all_reviews&pageNumber=1#reviews-filter-bar',
-              f'https://www.amazon.com/product-reviews/{productID}/ref=cm_cr_unknown?ie=UTF8&filterByStar=four_star&reviewerType=all_reviews&pageNumber=1#reviews-filter-bar',
-              f'https://www.amazon.com/product-reviews/{productID}/ref=cm_cr_unknown?ie=UTF8&filterByStar=three_star&reviewerType=all_reviews&pageNumber=1#reviews-filter-bar',
-              f'https://www.amazon.com/product-reviews/{productID}/ref=cm_cr_unknown?ie=UTF8&filterByStar=two_star&reviewerType=all_reviews&pageNumber=1#reviews-filter-bar',
-              f'https://www.amazon.com/product-reviews/{productID}/ref=cm_cr_unknown?ie=UTF8&filterByStar=one_star&reviewerType=all_reviews&pageNumber=1#reviews-filter-bar'
-              ]
-
-custom_headers = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
-    'Accept-Language': 'da, en-gb, en',
-    'Accept-Encoding': 'gzip, deflate, br',
-    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
-    'Referer': 'https://www.google.com/'
-}
-
+def get_completion(prompt, model="gpt-3.5-turbo"):
+    messages = [{"role": "user", "content": prompt}]
+    response = client.chat.completions.create(
+        model=model,
+        messages=messages,
+        temperature=0.7,
+    )
+    return response.choices[0].message.content
 
 def get_amazon_reviews(urls):
 
@@ -78,8 +66,6 @@ def get_amazon_reviews(urls):
 
     return all_reviews
 
-
-
 def parse_info(info_text):
     info_dict = {}
     lines = info_text.split('\n')
@@ -90,6 +76,33 @@ def parse_info(info_text):
             value = parts[1].strip()
             info_dict[key] = value
     return info_dict
+
+
+load_dotenv()
+client = OpenAI(
+  api_key=os.getenv('OPENAI_API_KEY'),
+)
+url = 'https://www.amazon.com/acer-Wireless-Non-Stop-Bluetooth5-3-Headphones/dp/B0CLYH2DRN/ref=sxin_16_sbv_search_btf?_encoding=UTF8&content-id=amzn1.sym.5cde1a09-4942-4242-87c5-e66d2d3b6a3c%3Aamzn1.sym.5cde1a09-4942-4242-87c5-e66d2d3b6a3c&cv_ct_cx=gaming%2Bheadsets&dib=eyJ2IjoiMSJ9.TeAUh4HrECihko2sKZE51A.xRjBuwPbdpYMBu2C2UUuuHjCaoLfZyIWg3SkYJrDOj4&dib_tag=se&keywords=gaming%2Bheadsets&pd_rd_i=B0CLYH2DRN&pd_rd_r=4661825c-41b4-4c76-9336-50c5cab08f62&pd_rd_w=nRXZa&pd_rd_wg=xcMyO&pf_rd_p=5cde1a09-4942-4242-87c5-e66d2d3b6a3c&pf_rd_r=V1EE101AZPK8M3J5934A&qid=1720420093&sbo=RZvfv%2F%2FHxDF%2BO5021pAnSA%3D%3D&sr=1-1-5190daf0-67e3-427c-bea6-c72c1df98776&th=1'
+parsed_url = urlparse(url)
+query_params = parse_qs(parsed_url.query)
+productID = query_params.get('pd_rd_i', [None])[0]
+
+reviewsUrl = [
+              f'https://www.amazon.com/product-reviews/{productID}/ref=cm_cr_unknown?ie=UTF8&filterByStar=five_star&reviewerType=all_reviews&pageNumber=1#reviews-filter-bar',
+              f'https://www.amazon.com/product-reviews/{productID}/ref=cm_cr_unknown?ie=UTF8&filterByStar=four_star&reviewerType=all_reviews&pageNumber=1#reviews-filter-bar',
+              f'https://www.amazon.com/product-reviews/{productID}/ref=cm_cr_unknown?ie=UTF8&filterByStar=three_star&reviewerType=all_reviews&pageNumber=1#reviews-filter-bar',
+              f'https://www.amazon.com/product-reviews/{productID}/ref=cm_cr_unknown?ie=UTF8&filterByStar=two_star&reviewerType=all_reviews&pageNumber=1#reviews-filter-bar',
+              f'https://www.amazon.com/product-reviews/{productID}/ref=cm_cr_unknown?ie=UTF8&filterByStar=one_star&reviewerType=all_reviews&pageNumber=1#reviews-filter-bar'
+              ]
+
+custom_headers = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
+    'Accept-Language': 'da, en-gb, en',
+    'Accept-Encoding': 'gzip, deflate, br',
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+    'Referer': 'https://www.google.com/'
+}
+
 
 
 response = requests.get(url, headers=custom_headers)
@@ -152,16 +165,6 @@ for i, reviews in enumerate(result):
 #         print(f"Title: {review['title']}")
 #         print(f"Content: {review['content'][:500]}")
 
+prompt = "Please analysis the product, includes its advantages, disadvantages and make a conclution\n" + text
 
-# 定義請求的參數
-response = openai.ChatCompletion.create(
-    model="gpt-3.5-turbo",
-    messages=[
-        {"role": "system", "content": "You are a helpful assistant."},
-        {"role": "user", "content": "Please analysis the product, includes its advantages, disadvantages and make a conclution\n" + text}
-    ],
-    max_tokens=4000  # 根據需要調整這個值
-)
-
-# 獲取並打印回應
-print(response.choices[0].message['content'].strip())
+print(get_completion(prompt).strip())
