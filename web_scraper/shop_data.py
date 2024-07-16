@@ -3,13 +3,15 @@ import requests
 import time
 from urllib.parse import urlparse, parse_qs
 import random
-
+import openai
 
 url = 'https://www.amazon.com/acer-Wireless-Non-Stop-Bluetooth5-3-Headphones/dp/B0CLYH2DRN/ref=sxin_16_sbv_search_btf?_encoding=UTF8&content-id=amzn1.sym.5cde1a09-4942-4242-87c5-e66d2d3b6a3c%3Aamzn1.sym.5cde1a09-4942-4242-87c5-e66d2d3b6a3c&cv_ct_cx=gaming%2Bheadsets&dib=eyJ2IjoiMSJ9.TeAUh4HrECihko2sKZE51A.xRjBuwPbdpYMBu2C2UUuuHjCaoLfZyIWg3SkYJrDOj4&dib_tag=se&keywords=gaming%2Bheadsets&pd_rd_i=B0CLYH2DRN&pd_rd_r=4661825c-41b4-4c76-9336-50c5cab08f62&pd_rd_w=nRXZa&pd_rd_wg=xcMyO&pf_rd_p=5cde1a09-4942-4242-87c5-e66d2d3b6a3c&pf_rd_r=V1EE101AZPK8M3J5934A&qid=1720420093&sbo=RZvfv%2F%2FHxDF%2BO5021pAnSA%3D%3D&sr=1-1-5190daf0-67e3-427c-bea6-c72c1df98776&th=1'
 
 parsed_url = urlparse(url)
 query_params = parse_qs(parsed_url.query)
 productID = query_params.get('pd_rd_i', [None])[0]
+
+openai.api_key = 'OPENAI_API_KEY'
 
 reviewsUrl = [
               f'https://www.amazon.com/product-reviews/{productID}/ref=cm_cr_unknown?ie=UTF8&filterByStar=five_star&reviewerType=all_reviews&pageNumber=1#reviews-filter-bar',
@@ -122,21 +124,44 @@ info_dict = parse_info(info)
 #reviews
 result = get_amazon_reviews(reviewsUrl)
 
-
-
-print(f"Name: {title}\n")
-print(f"Rating: {rating} out of 5 stars\n")
-print(f"Price: {price}\n")
-print(f"Image: {image}\n")
-print(f"Description: {description}\n")
-print("Information: ", end='')
+text = f"Name: {title}\nRating: {rating} out of 5 stars\nPrice: {price}\nImage: {image}\nDescription: {description}\nInformation: "
 for key, value in info_dict.items():
-    print(f"{key}: {value}")
-print("\nReviews:")
+    text += f"{key}: {value}\n"
+text += "Reviews:\n"
 star_words = ['5', '4', '3', '2', '1']
 for i, reviews in enumerate(result):
-    print(f"{star_words[i]} Star:")
+    text += f"{star_words[i]} Star:\n"
     for j, review in enumerate(reviews, 1):
-        print(f"{j}. Rating: {review['rating']}")
-        print(f"Title: {review['title']}")
-        print(f"Content: {review['content'][:500]}")
+        text += f"{j}. Rating: {review['rating']}\nTitle: {review['title']}\nContent: {review['content'][:500]}\n"
+
+
+# print(f"Name: {title}\n")
+# print(f"Rating: {rating} out of 5 stars\n")
+# print(f"Price: {price}\n")
+# print(f"Image: {image}\n")
+# print(f"Description: {description}\n")
+# print("Information: ", end='')
+# for key, value in info_dict.items():
+#     print(f"{key}: {value}")
+# print("\nReviews:")
+# star_words = ['5', '4', '3', '2', '1']
+# for i, reviews in enumerate(result):
+#     print(f"{star_words[i]} Star:")
+#     for j, review in enumerate(reviews, 1):
+#         print(f"{j}. Rating: {review['rating']}")
+#         print(f"Title: {review['title']}")
+#         print(f"Content: {review['content'][:500]}")
+
+
+# 定義請求的參數
+response = openai.ChatCompletion.create(
+    model="gpt-3.5-turbo",
+    messages=[
+        {"role": "system", "content": "You are a helpful assistant."},
+        {"role": "user", "content": "Please analysis the product, includes its advantages, disadvantages and make a conclution\n" + text}
+    ],
+    max_tokens=4000  # 根據需要調整這個值
+)
+
+# 獲取並打印回應
+print(response.choices[0].message['content'].strip())

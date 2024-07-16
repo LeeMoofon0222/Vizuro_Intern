@@ -1,7 +1,7 @@
 import pandas as pd
 
 # 讀取數據
-data = pd.read_csv('processed_data_v2.csv')
+data = pd.read_csv('processed_data_v3.csv')
 
 # 檢查各組數據量以決定是否能平均分配
 print(data['Churn'].value_counts())
@@ -15,4 +15,4 @@ grouped = data.groupby('Churn')
 balanced_sample = grouped.apply(lambda x: x.sample(n=sample_per_group, random_state=42)).reset_index(drop=True)
 
 # 保存結果
-balanced_sample.to_csv('reduced_data_v2.csv', index=False)
+balanced_sample.to_csv('reduced_data_v3.csv', index=False)

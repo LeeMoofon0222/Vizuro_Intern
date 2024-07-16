@@ -3,7 +3,7 @@ import json
 def round_values(obj):
     for key in obj.keys():
         if isinstance(obj[key], float):
-            obj[key] = round(obj[key], 1)
+            obj[key] = round(obj[key], 2)
         elif isinstance(obj[key], dict):
             round_values(obj[key])
     return obj

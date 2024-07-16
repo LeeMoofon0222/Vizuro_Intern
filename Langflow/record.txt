@@ -16,7 +16,7 @@ Use your domain knowledge to detail interpretation user's questions, Don't just 
 
 
 Please explain the relationship between these factor detailly, including why it is cause to classification, and how to improve it.
-
+Based on the provided data, What factors are identified as causes of the classification of kidney disease, please output its imp value.
 ------------------------------------------------------------------------------------------------------------------
 
 Use your own words to interpret this entire document, including all json object and their correlations and importance.
