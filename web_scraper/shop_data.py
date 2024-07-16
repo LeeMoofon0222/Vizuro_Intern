@@ -82,7 +82,7 @@ load_dotenv()
 client = OpenAI(
   api_key=os.getenv('OPENAI_API_KEY'),
 )
-url = 'https://www.amazon.com/acer-Wireless-Non-Stop-Bluetooth5-3-Headphones/dp/B0CLYH2DRN/ref=sxin_16_sbv_search_btf?_encoding=UTF8&content-id=amzn1.sym.5cde1a09-4942-4242-87c5-e66d2d3b6a3c%3Aamzn1.sym.5cde1a09-4942-4242-87c5-e66d2d3b6a3c&cv_ct_cx=gaming%2Bheadsets&dib=eyJ2IjoiMSJ9.TeAUh4HrECihko2sKZE51A.xRjBuwPbdpYMBu2C2UUuuHjCaoLfZyIWg3SkYJrDOj4&dib_tag=se&keywords=gaming%2Bheadsets&pd_rd_i=B0CLYH2DRN&pd_rd_r=4661825c-41b4-4c76-9336-50c5cab08f62&pd_rd_w=nRXZa&pd_rd_wg=xcMyO&pf_rd_p=5cde1a09-4942-4242-87c5-e66d2d3b6a3c&pf_rd_r=V1EE101AZPK8M3J5934A&qid=1720420093&sbo=RZvfv%2F%2FHxDF%2BO5021pAnSA%3D%3D&sr=1-1-5190daf0-67e3-427c-bea6-c72c1df98776&th=1'
+url = 'https://www.amazon.com/15-ProMax-Smartphone-Unlocked-Titanium/dp/B0D8RTFQYC/ref=sr_1_1_sspa?crid=3V9KY9NC5MV1Y&dib=eyJ2IjoiMSJ9.mR8oGuhsfH89CRAntrdspl2mOUTcZys3zCJNaMnrIWMECkNwcx4dA0mRCF8gi75OtsxjfPnH3siSn-z-i6uIpKRboRAuT-DGn_Iy4aT6POuyblQRGzP_oZ3HWxaXPOS9UW7rqXJQnKo4NiHjcXpSI_l-M3B-68lAGYWuGOBRfizMdnmBRtSMj_9KM1h6b-hKKxmobEgQe4SHD9fi452ZxkjmF4kn3CQ9pQDrLUW18Cw.zX1e2kBLWLDmD0jqqTyMmop4vXI9i5D5v37PwwdS-Ng&dib_tag=se&keywords=phone&qid=1721118237&sprefix=phone%2Caps%2C294&sr=8-1-spons&sp_csd=d2lkZ2V0TmFtZT1zcF9hdGY&th=1'
 parsed_url = urlparse(url)
 query_params = parse_qs(parsed_url.query)
 productID = query_params.get('pd_rd_i', [None])[0]
@@ -130,7 +130,7 @@ description_element = soup.select_one("#feature-bullets")
 description = description_element.text.strip() if description_element else 'Not found'
 
 # info
-info_element = soup.find('table', {'id': 'productDetails_techSpec_section_1'}) or soup.find('table', {'id': 'productDetails_detailBullets_sections1'})
+info_element = soup.find('table', {'id': 'productDetails_techSpec_section_1'}) or soup.find('table', {'id': 'productDetails_detailBullets_sections1'}) or soup.select_one("#prodDetails")
 info = info_element.text.strip() if info_element else 'Not found'
 info_dict = parse_info(info)
 
@@ -147,24 +147,23 @@ for i, reviews in enumerate(result):
     for j, review in enumerate(reviews, 1):
         text += f"{j}. Rating: {review['rating']}\nTitle: {review['title']}\nContent: {review['content'][:500]}\n"
 
+# prompt = "Please analysis the product, includes its advantages, disadvantages and make a conclution\n" + text
 
-# print(f"Name: {title}\n")
-# print(f"Rating: {rating} out of 5 stars\n")
-# print(f"Price: {price}\n")
-# print(f"Image: {image}\n")
-# print(f"Description: {description}\n")
-# print("Information: ", end='')
-# for key, value in info_dict.items():
-#     print(f"{key}: {value}")
-# print("\nReviews:")
-# star_words = ['5', '4', '3', '2', '1']
-# for i, reviews in enumerate(result):
-#     print(f"{star_words[i]} Star:")
-#     for j, review in enumerate(reviews, 1):
-#         print(f"{j}. Rating: {review['rating']}")
-#         print(f"Title: {review['title']}")
-#         print(f"Content: {review['content'][:500]}")
+# print(get_completion(prompt).strip())
 
-prompt = "Please analysis the product, includes its advantages, disadvantages and make a conclution\n" + text
-
-print(get_completion(prompt).strip())
+print(f"Name: {title}\n")
+print(f"Rating: {rating} out of 5 stars\n")
+print(f"Price: {price}\n")
+print(f"Image: {image}\n")
+print(f"Description: {description}\n")
+print("Information: ", end='')
+for key, value in info_dict.items():
+    print(f"{key}: {value}")
+print("\nReviews:")
+star_words = ['5', '4', '3', '2', '1']
+for i, reviews in enumerate(result):
+    print(f"{star_words[i]} Star:")
+    for j, review in enumerate(reviews, 1):
+        print(f"{j}. Rating: {review['rating']}")
+        print(f"Title: {review['title']}")
+        print(f"Content: {review['content'][:500]}")
