@@ -1,7 +1,7 @@
 import pandas as pd
 
 
-data_path = 'predict_result_rounded (1).csv' 
+data_path = 'predict_result.csv' 
 data = pd.read_csv(data_path)
 
 

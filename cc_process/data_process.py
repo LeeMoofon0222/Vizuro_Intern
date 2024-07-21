@@ -38,11 +38,10 @@ data[categorical_features] = data[categorical_features].astype(int)
 
 
 data[['Gender']] = data[['Gender']].replace(to_replace={'Male': 1, 'Female': 0})
-data[['Churn']] = data[['Churn']].replace(to_replace={0: 'Stay', 1: 'Churn'})
 # data[['Basic', 'Premium', 'Standard', 'Annual', 'Monthly', 'Quarterly']] = data[['Basic', 'Premium', 'Standard', 'Annual', 'Monthly', 'Quarterly']].replace(to_replace={'TRUE': 1, 'FALSE': 0})
 
 grouped = data.groupby('Churn')
 
 data = grouped.apply(lambda x: x.sample(grouped.size().min())).reset_index(drop=True)
 
-data.to_csv('processed_data_v3.csv', index=False)
+data.to_csv('processed_data_int.csv', index=False)

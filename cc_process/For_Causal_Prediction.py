@@ -11,8 +11,8 @@ actual_data = pd.read_csv('test_data.csv')
 predicted_data = predicted_data.head(actual_data.shape[0])
 
 # 假設 'classification' 是標籤列名
-y_pred = predicted_data['classification']
-y_true = actual_data['classification']
+y_pred = predicted_data['Churn']
+y_true = actual_data['Churn']
 
 # 計算準確率
 accuracy = accuracy_score(y_true, y_pred)
