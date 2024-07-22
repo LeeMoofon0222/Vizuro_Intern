@@ -14,28 +14,37 @@ project_id = st.sidebar.text_input("Project ID")
 
 model = st.sidebar.selectbox("Model", ["Llama 3 70b", "Llama 3 8b", "GPT 4o", "GPT 3.5-turbo"])
 
-# Setups
 st.sidebar.header("Setups")
 uploaded_file = st.sidebar.file_uploader("Choose a file for analyse... [Optional]", 
-                                         type=["json"],
-                                         help="Limit 1MB per file • json")
+                                         type=['json'], help="Limit 1MB per file • json")
+
+file_content = None
+if uploaded_file is not None:
+    try:
+        file_content = uploaded_file.getvalue()
+    except Exception as e:
+        st.error(f"Error reading file: {e}")
 
 # Select for conversation
 st.sidebar.header("Select for conversation")
 
-target_value = st.sidebar.selectbox("Target Value... [Optional]", ["Option 1", "Option 2"],index=None,
+target_value = st.sidebar.selectbox("Target Value... [Optional]", ["bgr", "classification"],index=None,
                                  placeholder="Select a target value...")
 
-feature_explaintion = st.text_area("Explain your csv file or features here (Not required)", "Type something") #Store it to database
+feature_explaintion = st.text_area("Explain your csv file or features here (Not required)", placeholder="Type something") #Store it to database
 
 if model == "Llama 3 70b":
     model_name = "llama3:70b"
+    model_type = "llama"
 elif model == "Llama 3 8b":
-    model_name = "llama3:8b"
+    model_name = "llama3:latest"
+    model_type = "llama"
 elif model == "GPT 4o":
     model_name = "gpt-4o"
+    model_type = "openai"
 else:
     model_name = "gpt-3.5-turbo"
+    model_type = "openai"
 
 #---------------------------------------------------------------------------------------------------------#
 
@@ -52,13 +61,12 @@ TWEAKS = {
         "sender_name": "AI",
         "session_id": ""
     },
-    #Use your domain knowledge to detail interpretation user's questions, Don't just look the document. If user didn't ask you to you interpret, just don't output it.____ + "The target feature is "+ target + "\n""
     "ParseData-AOZWl": {
         "sep": "\n",
         "template": "This is explaintion\n" + feature_explaintion + "\n" +"{text}\n Please reed the explaintion and take look at \"x\",\"y\",\"imp\",\"co\". For every json object, please mention the object that imp(importance) value not equals to 0, means x is a cause of y. If \"co\" value smaller than 0 and imp(importance) value not equals to 0, that means the bigger x will make smaller y. If \"co\" value bigger than 0 and imp(importance) value not equals to 0, that means the bigger x will make bigger y.\n" +  "Please just anwser user's question, don't output the text if user didn't ask you to interpret the data.",
     },
     "File-QG5F0": {
-        "path": "C:/Users/Moofon/桌面/Vizuro_Intern/causalAi_chatBot/output.json",#Here to change the file
+        "file": {"name": uploaded_file.name, "content": file_content.decode('utf-8')} if file_content else None,
         "silent_errors": False
     },
     "ChatInput-HLsyc": {
@@ -86,7 +94,7 @@ TWEAKS = {
     "mirostat": "Disabled",
     "mirostat_eta": None,
     "mirostat_tau": None,
-    "model": "llama3:70b",
+    "model": "llama3:latest",
     "num_ctx": None,
     "num_gpu": None,
     "num_thread": None,
@@ -104,6 +112,25 @@ TWEAKS = {
     "top_k": None,
     "top_p": None,
     "verbose": True
+    },
+    "OpenAIModel-UkSUC": {
+    "input_value": "",
+    "json_mode": False,
+    "max_tokens": None,
+    "model_kwargs": {},
+    "model_name": "gpt-4o",
+    "openai_api_base": "",
+    "openai_api_key": "OPENAI_API_KEY",
+    "output_schema": {},
+    "seed": 1,
+    "stream": False,
+    "system_message": "",
+    "temperature": 0.2
+    },
+    "CombineText-Dq6Lh": {
+        "delimiter": " ",
+        "text1": "",
+        "text2": ""
     }
 }
 
@@ -135,6 +162,7 @@ def format_message(message: str):
         formatted_message += line.strip() + "\n"
     return formatted_message
 
+
 # Streamlit UI
 if "messages" not in st.session_state:
     st.session_state.messages = []
@@ -143,7 +171,12 @@ for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-
+if model_type == "llama":
+    TWEAKS.pop("OpenAIModel-UkSUC")
+    TWEAKS["OllamaModel-6HNmK"]["model"] = model_name
+else:
+    TWEAKS.pop("OllamaModel-6HNmK")
+    TWEAKS["OpenAIModel-UkSUC"]["model"] = model_name
 
 if prompt := st.chat_input("Ask me about the causal graph"):
     st.session_state.messages.append({"role": "user", "content": prompt})
