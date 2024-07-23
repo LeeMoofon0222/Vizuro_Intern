@@ -1,138 +1,11 @@
 import streamlit as st
 import requests
 from typing import Optional
+import json
+import os
+from dotenv import load_dotenv
 
 
-#-----------------------------------------------UI--------------------------------------------------------#
-
-st.title("Causal AI Chat Bot")
-
-# Information to Access
-st.sidebar.header("Information to Access")
-access_token = st.sidebar.text_input("Access Token")
-project_id = st.sidebar.text_input("Project ID")
-
-model = st.sidebar.selectbox("Model", ["Llama 3 70b", "Llama 3 8b", "GPT 4o", "GPT 3.5-turbo"])
-
-st.sidebar.header("Setups")
-uploaded_file = st.sidebar.file_uploader("Choose a file for analyse... [Optional]", 
-                                         type=['json'], help="Limit 1MB per file • json")
-
-file_content = None
-if uploaded_file is not None:
-    try:
-        file_content = uploaded_file.getvalue()
-    except Exception as e:
-        st.error(f"Error reading file: {e}")
-
-# Select for conversation
-st.sidebar.header("Select for conversation")
-
-target_value = st.sidebar.selectbox("Target Value... [Optional]", ["bgr", "classification"],index=None,
-                                 placeholder="Select a target value...")
-
-feature_explaintion = st.text_area("Explain your csv file or features here (Not required)", placeholder="Type something") #Store it to database
-
-if model == "Llama 3 70b":
-    model_name = "llama3:70b"
-    model_type = "llama"
-elif model == "Llama 3 8b":
-    model_name = "llama3:latest"
-    model_type = "llama"
-elif model == "GPT 4o":
-    model_name = "gpt-4o"
-    model_type = "openai"
-else:
-    model_name = "gpt-3.5-turbo"
-    model_type = "openai"
-
-#---------------------------------------------------------------------------------------------------------#
-
-
-BASE_API_URL = "http://127.0.0.1:7860/api/v1/run"
-FLOW_ID = "ad96b5e1-9bc3-4f42-a9dc-b3277e38c13e"
-ENDPOINT = ""
-
-TWEAKS = {
-    "ChatOutput-e9Kry": {
-        "data_template": "{text}",
-        "input_value": "",
-        "sender": "Machine",
-        "sender_name": "AI",
-        "session_id": ""
-    },
-    "ParseData-AOZWl": {
-        "sep": "\n",
-        "template": "This is explaintion\n" + feature_explaintion + "\n" +"{text}\n Please reed the explaintion and take look at \"x\",\"y\",\"imp\",\"co\". For every json object, please mention the object that imp(importance) value not equals to 0, means x is a cause of y. If \"co\" value smaller than 0 and imp(importance) value not equals to 0, that means the bigger x will make smaller y. If \"co\" value bigger than 0 and imp(importance) value not equals to 0, that means the bigger x will make bigger y.\n" +  "Please just anwser user's question, don't output the text if user didn't ask you to interpret the data.",
-    },
-    "File-QG5F0": {
-        "file": {"name": uploaded_file.name, "content": file_content.decode('utf-8')} if file_content else None,
-        "silent_errors": False
-    },
-    "ChatInput-HLsyc": {
-        "files": "",
-        "input_value": "",
-        "sender": "User",
-        "sender_name": "User",
-        "session_id": ""
-    },
-    "CombineText-eUm9F": {
-        "delimiter": "",
-        "text1": "",
-        "text2": ""
-    },
-    "Prompt-vK3e9": {
-        "context": "",
-        "template": "{context}\n\nUser: {user_message}\nAI: ",
-        "user_message": ""
-    },
-    "OllamaModel-6HNmK": {
-    "base_url": "http://localhost:11434",
-    "format": "",
-    "input_value": "",
-    "metadata": {},
-    "mirostat": "Disabled",
-    "mirostat_eta": None,
-    "mirostat_tau": None,
-    "model": "llama3:latest",
-    "num_ctx": None,
-    "num_gpu": None,
-    "num_thread": None,
-    "repeat_last_n": None,
-    "repeat_penalty": None,
-    "stop_tokens": "",
-    "stream": False,
-    "system": "",
-    "system_message": "",
-    "tags": "",
-    "temperature": 0.1,
-    "template": "",
-    "tfs_z": None,
-    "timeout": None,
-    "top_k": None,
-    "top_p": None,
-    "verbose": True
-    },
-    "OpenAIModel-UkSUC": {
-    "input_value": "",
-    "json_mode": False,
-    "max_tokens": None,
-    "model_kwargs": {},
-    "model_name": "gpt-4o",
-    "openai_api_base": "",
-    "openai_api_key": "OPENAI_API_KEY",
-    "output_schema": {},
-    "seed": 1,
-    "stream": False,
-    "system_message": "",
-    "temperature": 0.2
-    },
-    "CombineText-Dq6Lh": {
-        "delimiter": " ",
-        "text1": "",
-        "text2": ""
-    }
-}
 
 def run_flow(message: str,
              endpoint: str,
@@ -155,6 +28,7 @@ def run_flow(message: str,
     response = requests.post(api_url, json=payload, headers=headers)
     return response.json()
 
+
 def format_message(message: str):
     lines = message.split('\n')
     formatted_message = ""
@@ -162,6 +36,68 @@ def format_message(message: str):
         formatted_message += line.strip() + "\n"
     return formatted_message
 
+
+def round_values(obj):
+    for key in obj.keys():
+        if isinstance(obj[key], float):
+            obj[key] = round(obj[key], 2)
+        elif isinstance(obj[key], dict):
+            round_values(obj[key])
+    return obj
+
+
+def remove_first_two_keys(json_objects):
+    updated_json_objects = []
+    for obj in json_objects:
+        keys_to_remove = list(obj.keys())[:2]
+        for key in keys_to_remove:
+            obj.pop(key)
+        obj = round_values(obj)
+        updated_json_objects.append(obj)
+    return updated_json_objects
+
+
+
+#-----------------------------------------------UI--------------------------------------------------------#
+
+load_dotenv()
+
+st.title("Causal AI Chat Bot")
+
+# Information to Access
+st.sidebar.header("Information to Access")
+access_token = st.sidebar.text_input("Access Token")
+project_id = st.sidebar.text_input("Project ID")
+
+model = st.sidebar.selectbox("Model", ["Llama 3 70b", "Llama 3 8b", "GPT 4o", "GPT 3.5-turbo"])
+
+st.sidebar.header("Setups")
+uploaded_file = st.sidebar.file_uploader("Choose a file for analyse... [Optional]", 
+                                         type=['json'], help="Limit 1MB per file • json")
+
+
+save_dir = "json_file_storage"
+
+saved_file_path = ""
+
+if uploaded_file is not None:
+    try:
+        file_content = json.loads(uploaded_file.getvalue().decode('utf-8'))
+        
+        file_content = remove_first_two_keys(file_content) #filter out json objects
+
+        if not os.path.exists(save_dir):
+            os.makedirs(save_dir)
+        
+        saved_file_path = os.path.join(save_dir, "file.json")
+        
+        with open(saved_file_path, 'w') as file:
+            json.dump(file_content, file)
+        
+    except json.JSONDecodeError:
+        st.error("Invalid JSON file. Please upload a valid JSON file.")
+
+st.sidebar.header("Select for conversation")
 
 # Streamlit UI
 if "messages" not in st.session_state:
@@ -171,12 +107,156 @@ for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
+target_value = st.sidebar.selectbox("Target Value... [Optional]", ["bgr", "classification"],index=None,
+                                 placeholder="Select a target value...")
+
+feature_explaintion = st.text_area("Explain your csv file or features here (Not required)", placeholder="Type something") #Store it to database
+
+if model == "Llama 3 70b":
+    model_name = "llama3:70b"
+    model_type = "llama"
+elif model == "Llama 3 8b":
+    model_name = "llama3:latest"
+    model_type = "llama"
+elif model == "GPT 4o":
+    model_name = "gpt-4o"
+    model_type = "openai"
+elif model == "GPT 3.5-turbo":
+    model_name = "gpt-3.5-turbo"
+    model_type = "openai"
+
+#---------------------------------------------------------------------------------------------------------#
+
+
+BASE_API_URL = "http://127.0.0.1:7860/api/v1/run"
+FLOW_ID = "ad96b5e1-9bc3-4f42-a9dc-b3277e38c13e"
+ENDPOINT = ""
+
 if model_type == "llama":
-    TWEAKS.pop("OpenAIModel-UkSUC")
-    TWEAKS["OllamaModel-6HNmK"]["model"] = model_name
+    TWEAKS = {
+        "ChatOutput-e9Kry": {
+            "data_template": "{text}",
+            "input_value": "",
+            "sender": "Machine",
+            "sender_name": "AI",
+            "session_id": ""
+        },
+        "ParseData-AOZWl": {
+            "sep": "\n",
+            "template": "This is explaintion\n" + feature_explaintion + "\n" +"{text}\n Please read the explaintion and take look at \"x\",\"y\",\"imp\",\"co\". For every json object, please mention the object that imp(importance) value not equals to 0, means x is a cause of y. If \"co\" value smaller than 0 and imp(importance) value not equals to 0, that means the bigger x will make smaller y. If \"co\" value bigger than 0 and imp(importance) value not equals to 0, that means the bigger x will make bigger y.\n" +  "Please just anwser user's question, don't output the text if user didn't ask you to interpret the data.",
+        },
+        "File-QG5F0": {
+            "path": "C:/Users/Moofon/桌面/Vizuro_Intern/causalAi_chatBot/" + saved_file_path,
+            "silent_errors": False
+        },
+        "ChatInput-HLsyc": {
+            "files": "",
+            "input_value": "",
+            "sender": "User",
+            "sender_name": "User",
+            "session_id": ""
+        },
+        "CombineText-eUm9F": {
+            "delimiter": "",
+            "text1": "",
+            "text2": ""
+        },
+        "Prompt-vK3e9": {
+            "context": "",
+            "template": "{context}\n\nUser: {user_message}\nAI: ",
+            "user_message": ""
+        },
+        "OllamaModel-6HNmK": {
+        "base_url": "http://localhost:11434",
+        "format": "",
+        "input_value": "",
+        "metadata": {},
+        "mirostat": "Disabled",
+        "mirostat_eta": None,
+        "mirostat_tau": None,
+        "model": model_name,
+        "num_ctx": None,
+        "num_gpu": None,
+        "num_thread": None,
+        "repeat_last_n": None,
+        "repeat_penalty": None,
+        "stop_tokens": "",
+        "stream": False,
+        "system": "",
+        "system_message": "",
+        "tags": "",
+        "temperature": 0.1,
+        "template": "",
+        "tfs_z": None,
+        "timeout": None,
+        "top_k": None,
+        "top_p": None,
+        "verbose": True
+        },
+        "CombineText-Dq6Lh": {
+            "delimiter": " ",
+            "text1": "",
+            "text2": ""
+        },
+        "TextInput-AUOyg": {
+            "input_value": "This is explaintion\n" + feature_explaintion + "\n" +"\n"+ "Please read the explaintion and take look at \"x\",\"y\",\"imp\",\"co\". For every json object, please mention the object that imp(importance) value not equals to 0, means x is a cause of y. If \"co\" value smaller than 0 and imp(importance) value not equals to 0, that means the bigger x will make smaller y. If \"co\" value bigger than 0 and imp(importance) value not equals to 0, that means the bigger x will make bigger y.\n" +  "Please just anwser user's question, don't output the text if user didn't ask you to interpret the data."
+        }
+    }
 else:
-    TWEAKS.pop("OllamaModel-6HNmK")
-    TWEAKS["OpenAIModel-UkSUC"]["model"] = model_name
+    TWEAKS = {
+        "ChatOutput-e9Kry": {
+            "data_template": "{text}",
+            "input_value": "",
+            "sender": "Machine",
+            "sender_name": "AI",
+            "session_id": ""
+        },
+        "ParseData-AOZWl": {
+            "sep": "\n",
+            "template": "This is explaintion\n" + feature_explaintion + "\n" +"{text}\n Please reed the explaintion and take look at \"x\",\"y\",\"imp\",\"co\". For every json object, please mention the object that imp(importance) value not equals to 0, means x is a cause of y. If \"co\" value smaller than 0 and imp(importance) value not equals to 0, that means the bigger x will make smaller y. If \"co\" value bigger than 0 and imp(importance) value not equals to 0, that means the bigger x will make bigger y.\n" +  "Please just anwser user's question, don't output the text if user didn't ask you to interpret the data.",
+        },
+        "File-QG5F0": {
+            "path": "C:/Users/Moofon/桌面/Vizuro_Intern/causalAi_chatBot/" + saved_file_path,
+            "silent_errors": False
+        },
+        "ChatInput-HLsyc": {
+            "files": "",
+            "input_value": "",
+            "sender": "User",
+            "sender_name": "User",
+            "session_id": ""
+        },
+        "CombineText-eUm9F": {
+            "delimiter": "",
+            "text1": "",
+            "text2": ""
+        },
+        "Prompt-vK3e9": {
+            "context": "",
+            "template": "{context}\n\nUser: {user_message}\nAI: ",
+            "user_message": ""
+        },
+        "OpenAIModel-UkSUC": {
+        "input_value": "",
+        "json_mode": False,
+        "max_tokens": None,
+        "model_kwargs": {},
+        "model_name": model_name,
+        "openai_api_base": "",
+        "openai_api_key": os.getenv("OPENAI_API_KEY"),
+        "output_schema": {},
+        "seed": 1,
+        "stream": False,
+        "system_message": "",
+        "temperature": 0.2
+        },
+        "CombineText-Dq6Lh": {
+            "delimiter": " ",
+            "text1": "",
+            "text2": ""
+        }
+    }
+
 
 if prompt := st.chat_input("Ask me about the causal graph"):
     st.session_state.messages.append({"role": "user", "content": prompt})
