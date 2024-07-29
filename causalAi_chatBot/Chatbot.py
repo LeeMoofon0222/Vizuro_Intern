@@ -28,6 +28,14 @@ def run_flow(message: str,
         payload["tweaks"] = tweaks
     if api_key:
         headers = {"x-api-key": api_key}
+    #     # Set the input value in the appropriate tweak
+    #     if "ChatInput-HLsyc" in tweaks:
+    #         tweaks["ChatInput-HLsyc"]["input_value"] = message
+    # else:
+    #     payload["input_value"] = message
+
+    # headers = {"x-api-key": api_key} if api_key else None
+    
     response = requests.post(api_url, json=payload, headers=headers)
     return response.json()
 
@@ -137,48 +145,46 @@ elif model == "GPT 3.5-turbo":
 
 
 BASE_API_URL = "http://127.0.0.1:7860/api/v1/run"
-FLOW_ID = "ad96b5e1-9bc3-4f42-a9dc-b3277e38c13e"
+FLOW_ID = "b40bf1e6-686d-4bb9-96b4-4e766face139"
 ENDPOINT = ""
 TWEAKS = {
-    "ChatOutput-e9Kry": {
+    "ChatOutput-XKzcM": {
         "data_template": "{text}",
-        "input_value": "",
         "sender": "Machine",
         "sender_name": "AI",
         "session_id": ""
     },
-    "ParseData-AOZWl": {
+    "ParseData-nc2eq": {
         "sep": "\n",
         "template": "This is the explaintion\n" + feature_explaintion + "\n" + "{text}\n Please read the explaintion and take look at \"x\",\"y\",\"imp\",\"co\". For every json object, please mention the object that imp(importance) value not equals to 0, means x is a cause of y and thay have direct relationship. If \"co\" value smaller than 0 and imp(importance) value not equals to 0, that means the bigger x will make smaller y. If \"co\" value bigger than 0 and imp(importance) value not equals to 0, that means the bigger x will make bigger y.\n" + "Anwser user's question base on the flie but use your domain knowledge to interpret and anwser user's question. For every object where imp (importance) value is not equal to 0, it means there is a direct relationship between x and y.\n" + " Use your domain knowledge to anwser User's question in next line. Don't mention about how you found the anwser like Based on the provided JSON objects.\n",
     },
-    "File-QG5F0": {
+    "File-QXhLH": {
         "path": current_dir + "/" + saved_file_path,
         "silent_errors": False
     },
-    "ChatInput-HLsyc": {
+    "ChatInput-zhi0V": {
         "files": "",
-        "input_value": "",
         "sender": "User",
         "sender_name": "User",
         "session_id": st.session_state.session_id
     },
-    "CombineText-eUm9F": {
+    "CombineText-pJHHM": {
         "delimiter": "",
         "text1": "",
         "text2": ""
     },
-    "Prompt-vK3e9": {
+    "Prompt-nKfg6": {
         "context": "Use your domain knowledge to anwser User's question",
         "template": "{context}\n\nUser: {user_message}\nAI: ",
         "user_message": ""
     },
     
-    "CombineText-Dq6Lh": {
+    "CombineText-IGgKp": {
         "delimiter": " ",
         "text1": "",
         "text2": ""
     },
-    "Memory-uCMdP": {
+    "Memory-kITEr": {
         "n_messages": 8,
         "order": "Ascending",
         "sender": "Machine and User",
@@ -186,7 +192,7 @@ TWEAKS = {
         "session_id": st.session_state.session_id,
         "template": "{sender_name}: {text}"
     },
-    "Prompt-RGODR": {
+    "Prompt-lWzlq": {
         "context": "",
         "template": "{context}\n\nUser: {user_message}\nAI: ",
         "user_message": ""
@@ -195,12 +201,11 @@ TWEAKS = {
 
 
 if model_type == "llama":
-    TWEAKS.pop("OpenAIModel-UkSUC", None)
-    TWEAKS.pop("OllamaModel-6HNmK", None)
-    TWEAKS["OllamaModel-6HNmK"] = {
+    TWEAKS.pop("OpenAIModel-OWsv2", None)
+    TWEAKS.pop("OllamaModel-0W5Bx", None)
+    TWEAKS["OllamaModel-0W5Bx"] = {
         "base_url": "http://localhost:11434",
         "format": "",
-        "input_value": "",
         "metadata": {},
         "mirostat": "Disabled",
         "mirostat_eta": None,
@@ -225,10 +230,9 @@ if model_type == "llama":
         "verbose": True
     }
 else:
-    TWEAKS.pop("OpenAIModel-UkSUC", None)
-    TWEAKS.pop("OllamaModel-6HNmK", None)
-    TWEAKS["OpenAIModel-UkSUC"] = {
-        "input_value": "",
+    TWEAKS.pop("OpenAIModel-OWsv2", None)
+    TWEAKS.pop("OllamaModel-0W5Bx", None)
+    TWEAKS["OpenAIModel-OWsv2"] = {
         "json_mode": False,
         "max_tokens": None,
         "model_kwargs": {},
@@ -254,6 +258,7 @@ if prompt := st.chat_input("Ask me about the causal graph"):
         api_key = None
         output_type = "chat"
         input_type = "chat"
+    
 
         try:
             response = run_flow(
