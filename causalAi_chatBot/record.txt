@@ -12,12 +12,15 @@ Use your domain knowledge to detail interpretation user's questions, Don't just 
 ------------------------------------------------------------------------------------------------------------
 python -m langflow run
 python -m streamlit run main.py
+ollama run llama3:8b
 ------------------------------------------------------------------------------------------------------------
 
+Please use Traditional Chinese to anwser my next question. 
 
-Why bgr have relation with diabetes
+Why bgr have relation with Diabetes Mellitus
 
 Please explain the relationship between these factor detailly, including why it is cause to classification, and how to improve it.
+
 Based on the provided data, What factors are identified as causes of the classification of kidney disease, please output its imp value.
 ------------------------------------------------------------------------------------------------------------------
 
@@ -26,59 +29,62 @@ Use your own words to interpret this entire document, including all json object 
 
 
 1.Age(numerical)
-  	  	age in years
- 	2.Blood Pressure(numerical)
-	       	bp in mm/Hg
- 	3.Specific Gravity(nominal)
-	  	sg - (1.005,1.010,1.015,1.020,1.025)
- 	4.Albumin(nominal)
-		al - (0,1,2,3,4,5)
- 	5.Sugar(nominal)
-		su - (0,1,2,3,4,5)
- 	6.Red Blood Cells(nominal)
-		rbc - (normal,abnormal)
- 	7.Pus Cell (nominal)
-		pc - (normal,abnormal)
- 	8.Pus Cell clumps(nominal)
-		pcc - (present,notpresent)
- 	9.Bacteria(nominal)
-		ba  - (present,notpresent)
- 	10.Blood Glucose Random(numerical)		
-		bgr in mgs/dl
- 	11.Blood Urea(numerical)	
-		bu in mgs/dl
- 	12.Serum Creatinine(numerical)	
-		sc in mgs/dl
- 	13.Sodium(numerical)
-		sod in mEq/L
- 	14.Potassium(numerical)	
-		pot in mEq/L
- 	15.Hemoglobin(numerical)
-		hemo in gms
- 	16.Packed  Cell Volume(numerical)
- 	17.White Blood Cell Count(numerical)
-		wc in cells/cumm
- 	18.Red Blood Cell Count(numerical)	
-		rc in millions/cmm
- 	19.Hypertension(nominal)	
-		htn - (yes,no)
- 	20.Diabetes Mellitus(nominal)	
-		dm - (yes,no)
- 	21.Coronary Artery Disease(nominal)
-		cad - (yes,no)
- 	22.Appetite(nominal)	
-		appet - (good,poor)
- 	23.Pedal Edema(nominal)
-		pe - (yes,no)	
- 	24.Anemia(nominal)
-		ane - (yes,no)
- 	25.Class (nominal)		
-		class - (ckd,notckd)
+	age in years
+2.Blood Pressure(numerical)
+	bp in mm/Hg
+3.Specific Gravity(nominal)
+	sg - (1.005,1.010,1.015,1.020,1.025)
+4.Albumin(nominal)
+	al - (0,1,2,3,4,5)
+5.Sugar(nominal)
+	su - (0,1,2,3,4,5)
+6.Red Blood Cells(nominal)
+	rbc - (normal,abnormal)
+7.Pus Cell (nominal)
+	pc - (normal,abnormal)
+8.Pus Cell clumps(nominal)
+	pcc - (present,notpresent)
+9.Bacteria(nominal)
+	ba  - (present,notpresent)
+10.Blood Glucose Random(numerical)		
+	bgr in mgs/dl
+11.Blood Urea(numerical)	
+	bu in mgs/dl
+12.Serum Creatinine(numerical)	
+	sc in mgs/dl
+13.Sodium(numerical)
+	sod in mEq/L
+14.Potassium(numerical)	
+	pot in mEq/L
+15.Hemoglobin(numerical)
+	hemo in gms
+16.Packed  Cell Volume(numerical)
+17.White Blood Cell Count(numerical)
+	wc in cells/cumm
+18.Red Blood Cell Count(numerical)	
+	rc in millions/cmm
+19.Hypertension(nominal)	
+	htn - (yes,no)
+20.Diabetes Mellitus(nominal)	
+	dm - (yes,no)
+21.Coronary Artery Disease(nominal)
+	cad - (yes,no)
+22.Appetite(nominal)	
+	appet - (good,poor)
+23.Pedal Edema(nominal)
+	pe - (yes,no)	
+24.Anemia(nominal)
+	ane - (yes,no)
+25.Classification (nominal)		
+	Classification - (ckd,notckd) ckd: chronic kidney disease 
 
 
 
+Customer churn refers to the phenomenon where customers discontinue their relationship or subscription with a company or service provider. It represents the rate at which customers stop using a company's products or services within a specific period. Churn is an important metric for businesses as it directly impacts revenue, growth, and customer retention.
 
+In the context of the Churn dataset, the churn label indicates whether a customer has churned or not. A churned customer is one who has decided to discontinue their subscription or usage of the company's services. On the other hand, a non-churned customer is one who continues to remain engaged and retains their relationship with the company.
 
+Understanding customer churn is crucial for businesses to identify patterns, factors, and indicators that contribute to customer attrition. By analyzing churn behavior and its associated features, companies can develop strategies to retain existing customers, improve customer satisfaction, and reduce customer turnover. Predictive modeling techniques can also be applied to forecast and proactively address potential churn, enabling companies to take proactive measures to retain at-risk customers.
 
 
 
