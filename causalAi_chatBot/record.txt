@@ -17,12 +17,9 @@ ollama run llama3:8b
 
 Please use Traditional Chinese to anwser my next question. 
 
+Please explain the relationship between Blood Glucose Random and Diabetes Mellitusthat base on provideed data, and how to avoid it.
 
-
-Please explain the relationship between these factor detailly, including why it is cause to classification, and how to improve it.
-
-Based on the provided data, What factors are identified as causes of the classification of kidney disease, please output its imp value.
-------------------------------------------------------------------------------------------------------------------
+Based on the provided data, What factors are the causes of chronic kidney disease(classification), please output the imp value of the factors and explain how to improve it.
 
 Use your own words to interpret this entire document, including all json object and their correlations and importance.
 

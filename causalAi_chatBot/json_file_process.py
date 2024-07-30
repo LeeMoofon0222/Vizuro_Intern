@@ -15,7 +15,8 @@ def remove_first_two_keys(json_objects):
         for key in keys_to_remove:
             obj.pop(key)
         obj = round_values(obj)
-        updated_json_objects.append(obj)
+        if obj.get('imp', 0) != 0:
+            updated_json_objects.append(obj)
     return updated_json_objects
 
 def main():

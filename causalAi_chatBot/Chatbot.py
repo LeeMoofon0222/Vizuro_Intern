@@ -7,7 +7,6 @@ from dotenv import load_dotenv
 import uuid
 
 
-
 def run_flow(message: str,
              endpoint: str,
              output_type: str = "chat",
@@ -28,13 +27,6 @@ def run_flow(message: str,
         payload["tweaks"] = tweaks
     if api_key:
         headers = {"x-api-key": api_key}
-    #     # Set the input value in the appropriate tweak
-    #     if "ChatInput-HLsyc" in tweaks:
-    #         tweaks["ChatInput-HLsyc"]["input_value"] = message
-    # else:
-    #     payload["input_value"] = message
-
-    # headers = {"x-api-key": api_key} if api_key else None
     
     response = requests.post(api_url, json=payload, headers=headers)
     return response.json()
@@ -57,15 +49,67 @@ def round_values(obj):
     return obj
 
 
-def remove_first_two_keys(json_objects):
+def remove_json_object(json_objects):
     updated_json_objects = []
     for obj in json_objects:
         keys_to_remove = list(obj.keys())[:2]
         for key in keys_to_remove:
             obj.pop(key)
         obj = round_values(obj)
-        updated_json_objects.append(obj)
+        if obj.get('imp', 0) != 0:
+            updated_json_objects.append(obj)
     return updated_json_objects
+
+
+def try_upload_json():
+    save_dir = "json_file_storage"
+    try:
+        file_content = json.loads(upload_file.getvalue().decode('utf-8'))
+
+        file_content = remove_json_object(file_content)  # filter out json objects
+
+        if not os.path.exists(save_dir):
+            os.makedirs(save_dir)
+
+        saved_file_path = os.path.join(save_dir, f"{sessionID}.json")
+
+        with open(saved_file_path, 'w') as file:
+            json.dump(file_content, file, indent=2, ensure_ascii=False)
+        
+        return saved_file_path
+
+    except json.JSONDecodeError:
+        st.error("Invalid JSON file. Please upload a valid JSON file.")
+
+
+def model_select(model):
+    if model == "Llama 3 70b":
+        model_name = "llama3:70b"
+        model_type = "llama"
+    elif model == "Llama 3 8b":
+        model_name = "llama3:latest"
+        model_type = "llama"
+    elif model == "GPT 4o":
+        model_name = "gpt-4o"
+        model_type = "openai"
+    elif model == "GPT 3.5-turbo":
+        model_name = "gpt-3.5-turbo"
+        model_type = "openai"
+    return model_name, model_type
+
+
+def delete_session(session_id):
+
+    url = f"http://127.0.0.1:7860/api/v1/monitor/messages/session/{session_id}"
+
+
+    response = requests.delete(url)
+
+    if response.status_code != 204:
+        print(f"Failed to clear session messages: {response.status_code} - {response.text}")
+        
+
+
 
 
 load_dotenv()
@@ -73,9 +117,10 @@ load_dotenv()
 if "session_id" not in st.session_state:
     st.session_state.session_id = str(uuid.uuid4())
 
+sessionID = st.session_state.session_id
+
 current_dir = os.path.dirname(os.path.abspath(__file__))
 
-prior_message = ""
 
 # -----------------------------------------------UI--------------------------------------------------------#
 
@@ -88,35 +133,30 @@ access_token = st.sidebar.text_input("Access Token")
 project_id = st.sidebar.text_input("Project ID")
 
 model = st.sidebar.selectbox("Model", ["Llama 3 70b", "Llama 3 8b", "GPT 4o", "GPT 3.5-turbo"])
+model_name, model_type = model_select(model)
 
 st.sidebar.header("Setups")
-uploaded_file = st.sidebar.file_uploader("Choose a file for analyse...",
-                                         type=['json'])
 
-save_dir = "json_file_storage"
-
-saved_file_path = ""
-
-if uploaded_file is not None:
-    try:
-        file_content = json.loads(uploaded_file.getvalue().decode('utf-8'))
-
-        file_content = remove_first_two_keys(file_content)  # filter out json objects
-
-        if not os.path.exists(save_dir):
-            os.makedirs(save_dir)
-
-        saved_file_path = os.path.join(save_dir, "file.json")
-
-        with open(saved_file_path, 'w') as file:
-            json.dump(file_content, file, indent=2, ensure_ascii=False)
-
-    except json.JSONDecodeError:
-        st.error("Invalid JSON file. Please upload a valid JSON file.")
+upload_file = st.sidebar.file_uploader("Choose a file for analyse...",type=['json'])
+saved_file_path = try_upload_json()
 
 st.sidebar.header("Select for conversation")
 
-# Streamlit UI
+
+sidebar = st.sidebar.container()
+col1, col2 = sidebar.columns(2)
+
+with col1:
+    if st.button("New Chat", type="primary", use_container_width=True):
+        st.session_state.messages = []
+        st.rerun()
+
+with col2:
+    if st.button("Delete Memory", type="primary", use_container_width=True):
+        delete_session(sessionID)
+        st.session_state.messages = []
+        st.rerun()
+
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
@@ -124,26 +164,11 @@ for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-target_value = st.sidebar.selectbox("Target Value... [Optional]", ["bgr", "classification"], index=None,
-                                    placeholder="Select a target value...")
+prompt = st.chat_input("Ask me about the causal graph")
 
 
-if model == "Llama 3 70b":
-    model_name = "llama3:70b"
-    model_type = "llama"
-elif model == "Llama 3 8b":
-    model_name = "llama3:latest"
-    model_type = "llama"
-elif model == "GPT 4o":
-    model_name = "gpt-4o"
-    model_type = "openai"
-elif model == "GPT 3.5-turbo":
-    model_name = "gpt-3.5-turbo"
-    model_type = "openai"
 
-# ---------------------------------------------------------------------------------------------------------#
-
-
+# ----------------------------------------Langflow----------------------------------------------------------#
 BASE_API_URL = "http://127.0.0.1:7860/api/v1/run"
 FLOW_ID = "b40bf1e6-686d-4bb9-96b4-4e766face139"
 ENDPOINT = ""
@@ -152,11 +177,11 @@ TWEAKS = {
         "data_template": "{text}",
         "sender": "Machine",
         "sender_name": "AI",
-        "session_id": ""
+        "session_id": sessionID
     },
     "ParseData-nc2eq": {
         "sep": "\n",
-        "template": "This is the explaintion\n" + feature_explaintion + "\n" + "{text}\n Please read the explaintion and take look at \"x\",\"y\",\"imp\",\"co\". For every json object, please mention the object that imp(importance) value not equals to 0, means x is a cause of y and thay have direct relationship. If \"co\" value smaller than 0 and imp(importance) value not equals to 0, that means the bigger x will make smaller y. If \"co\" value bigger than 0 and imp(importance) value not equals to 0, that means the bigger x will make bigger y.\n" + "Anwser user's question base on the flie but use your domain knowledge to interpret and anwser user's question. For every object where imp (importance) value is not equal to 0, it means there is a direct relationship between x and y.\n" + " Use your domain knowledge to anwser User's question in next line. Don't mention about how you found the anwser like Based on the provided JSON objects.\n",
+        "template": "This is the explaintion\n" + feature_explaintion + "\n" + "{text}\n Please read the explaintion and take look at \"x\",\"y\",\"imp\",\"co\". For every json object, x and y means two factors that x is a cause of y. The bigger imp(importance) value means x and y have strongger causation. If \"co\" value smaller than 0, that means the bigger x will make smaller y. If \"co\" value bigger than 0, that means the bigger x will make bigger y.\n" + "Anwser user's question base on the flie but use your domain knowledge to interpret and anwser user's question.\n" + " Don't mention about how you found the anwser like Based on the provided JSON objects.\n",
     },
     "File-QXhLH": {
         "path": current_dir + "/" + saved_file_path,
@@ -166,7 +191,7 @@ TWEAKS = {
         "files": "",
         "sender": "User",
         "sender_name": "User",
-        "session_id": st.session_state.session_id
+        "session_id": sessionID
     },
     "CombineText-pJHHM": {
         "delimiter": "",
@@ -174,7 +199,7 @@ TWEAKS = {
         "text2": ""
     },
     "Prompt-nKfg6": {
-        "context": "Use your domain knowledge to anwser User's question",
+        "context": "Use your domain knowledge to anwser User's question below. But output base on provided data. Don't confuse co value with imp value.",
         "template": "{context}\n\nUser: {user_message}\nAI: ",
         "user_message": ""
     },
@@ -189,7 +214,7 @@ TWEAKS = {
         "order": "Ascending",
         "sender": "Machine and User",
         "sender_name": "User",
-        "session_id": st.session_state.session_id,
+        "session_id": sessionID,
         "template": "{sender_name}: {text}"
     },
     "Prompt-lWzlq": {
@@ -247,7 +272,10 @@ else:
     }
 
 
-if prompt := st.chat_input("Ask me about the causal graph"):
+
+# -----------------------------------------------------------------------------------------------------------#
+
+if prompt:
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
@@ -259,7 +287,6 @@ if prompt := st.chat_input("Ask me about the causal graph"):
         output_type = "chat"
         input_type = "chat"
     
-
         try:
             response = run_flow(
                 message=prompt,
@@ -268,7 +295,7 @@ if prompt := st.chat_input("Ask me about the causal graph"):
                 input_type=input_type,
                 tweaks=tweaks,
                 api_key=api_key,
-                session_id=st.session_state.session_id,
+                session_id=sessionID,
             )
 
             if 'outputs' not in response:
