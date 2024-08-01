@@ -1,0 +1,146 @@
+[
+  {
+    "x": "instant",
+    "y": "dteday",
+    "imp": 0.15,
+    "co": null
+  },
+  {
+    "x": "instant",
+    "y": "season",
+    "imp": 0.34,
+    "co": 0.21
+  },
+  {
+    "x": "mnth",
+    "y": "season",
+    "imp": 0.18,
+    "co": 0.57
+  },
+  {
+    "x": "instant",
+    "y": "yr",
+    "imp": 0.65,
+    "co": 0.87
+  },
+  {
+    "x": "instant",
+    "y": "mnth",
+    "imp": 0.65,
+    "co": 0.85
+  },
+  {
+    "x": "casual",
+    "y": "hr",
+    "imp": 0.3,
+    "co": 0.9
+  },
+  {
+    "x": "registered",
+    "y": "hr",
+    "imp": 0.21,
+    "co": 0.87
+  },
+  {
+    "x": "dteday",
+    "y": "holiday",
+    "imp": 0.29,
+    "co": null
+  },
+  {
+    "x": "weekday",
+    "y": "holiday",
+    "imp": 0.46,
+    "co": -0.27
+  },
+  {
+    "x": "dteday",
+    "y": "weekday",
+    "imp": 0.35,
+    "co": null
+  },
+  {
+    "x": "weekday",
+    "y": "workingday",
+    "imp": 0.63,
+    "co": 0.02
+  },
+  {
+    "x": "temp",
+    "y": "weathersit",
+    "imp": 0.15,
+    "co": -0.29
+  },
+  {
+    "x": "hum",
+    "y": "weathersit",
+    "imp": 0.35,
+    "co": 0.92
+  },
+  {
+    "x": "instant",
+    "y": "temp",
+    "imp": 0.31,
+    "co": 0.17
+  },
+  {
+    "x": "mnth",
+    "y": "temp",
+    "imp": 0.14,
+    "co": 0.31
+  },
+  {
+    "x": "instant",
+    "y": "atemp",
+    "imp": 0.28,
+    "co": 0.16
+  },
+  {
+    "x": "mnth",
+    "y": "atemp",
+    "imp": 0.15,
+    "co": 0.31
+  },
+  {
+    "x": "temp",
+    "y": "atemp",
+    "imp": 0.19,
+    "co": 1.0
+  },
+  {
+    "x": "instant",
+    "y": "hum",
+    "imp": 0.14,
+    "co": 0.57
+  },
+  {
+    "x": "temp",
+    "y": "hum",
+    "imp": 0.16,
+    "co": -0.18
+  },
+  {
+    "x": "hum",
+    "y": "windspeed",
+    "imp": 0.33,
+    "co": -0.94
+  },
+  {
+    "x": "casual",
+    "y": "registered",
+    "imp": 0.26,
+    "co": 0.94
+  },
+  {
+    "x": "casual",
+    "y": "cnt",
+    "imp": 0.25,
+    "co": 0.96
+  },
+  {
+    "x": "registered",
+    "y": "cnt",
+    "imp": 0.3,
+    "co": 0.79
+  }
+]

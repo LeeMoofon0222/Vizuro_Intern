@@ -40,38 +40,42 @@ def format_message(message: str):
     return formatted_message
 
 
-def round_values(obj):
-    for key in obj.keys():
-        if isinstance(obj[key], float):
-            obj[key] = round(obj[key], 2)
-        elif isinstance(obj[key], dict):
-            round_values(obj[key])
-    return obj
+
+def remove_json_object(json_data):
+    if isinstance(json_data, str):
+        json_data = json.loads(json_data)
+
+    if not isinstance(json_data, dict) or 'edges' not in json_data:
+        st.error("Project not exist or invalid JSON file")
+        return None
+
+    edges = json_data['edges']
+    updated_edges = []
+
+    for edge in edges:
+        if isinstance(edge, dict):
+            updated_edge = {
+                "x": edge.get('x', ''),
+                "y": edge.get('y', ''),
+                "imp": round(edge.get('imp', 0), 2),
+                "co": round(edge.get('co', 0), 2) if edge.get('co') is not None else None
+            }
+            if updated_edge['imp'] != 0:
+                updated_edges.append(updated_edge)
+
+    return updated_edges
 
 
-def remove_json_object(json_objects):
-    updated_json_objects = []
-    for obj in json_objects:
-        keys_to_remove = list(obj.keys())[:2]
-        for key in keys_to_remove:
-            obj.pop(key)
-        obj = round_values(obj)
-        if obj.get('imp', 0) != 0:
-            updated_json_objects.append(obj)
-    return updated_json_objects
-
-
-def try_upload_json():
-    save_dir = "json_file_storage"
+def try_upload_json(file_content,email,project_id):
+    save_dir = f"json_file_storage/{email}"
     try:
-        file_content = json.loads(upload_file.getvalue().decode('utf-8'))
 
         file_content = remove_json_object(file_content)  # filter out json objects
 
         if not os.path.exists(save_dir):
             os.makedirs(save_dir)
 
-        saved_file_path = os.path.join(save_dir, f"{sessionID}.json")
+        saved_file_path = os.path.join(save_dir, f"{project_id}.json")
 
         with open(saved_file_path, 'w') as file:
             json.dump(file_content, file, indent=2, ensure_ascii=False)
@@ -107,7 +111,42 @@ def delete_session(session_id):
 
     if response.status_code != 204:
         print(f"Failed to clear session messages: {response.status_code} - {response.text}")
-        
+
+
+def request_login(email, password):
+    url = "http://192.168.50.3:25000/api/v1/user/login"
+    headers = {"Content-Type": "application/json"}
+    payload = {
+        "email": email,
+        "password": password
+    }
+    try:
+        response = requests.post(url, json=payload, headers=headers)
+        token = response.json()
+        return token['access_token']
+    except requests.exceptions.RequestException as e:
+        st.error(f"Error: {e}")
+
+
+def request_json(email, password, project_id):
+    url = f"http://192.168.50.3:25000/api/v1/dataset_groups/{project_id}/causal_graph/edges"
+    access_token = request_login(email, password)
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {access_token}"
+    }
+
+    try:
+        response = requests.get(url, headers=headers)
+        content = response.json()
+        try_upload_json(content,email,project_id)
+
+    except requests.exceptions.HTTPError as e:
+        st.error(f"Error: {e}")
+    
+    
+    
+
 
 
 
@@ -129,19 +168,20 @@ st.title("Causal AI Chat Bot")
 feature_explaintion = st.text_area("Explain your json file or features here (Not required)", placeholder="Type something")  # Can Store it to database
 
 st.sidebar.header("Information to Access")
-access_token = st.sidebar.text_input("Access Token")
-project_id = st.sidebar.text_input("Project ID")
 
-model = st.sidebar.selectbox("Model", ["Llama 3 70b", "Llama 3 8b", "GPT 4o", "GPT 3.5-turbo"])
-model_name, model_type = model_select(model)
+email = st.sidebar.text_input("Email", placeholder="Email")
+password = st.sidebar.text_input("Password", placeholder="Password")
+project_id = st.sidebar.text_input("Project ID", placeholder="Project ID")
 
-st.sidebar.header("Setups")
 
-upload_file = st.sidebar.file_uploader("Choose a file for analyse...",type=['json'])
-saved_file_path = try_upload_json()
+if st.sidebar.button("Upload Json File", use_container_width=True):
+    request_json(email, password, project_id)
+
 
 st.sidebar.header("Select for conversation")
 
+model = st.sidebar.selectbox("Model", ["Llama 3 70b", "Llama 3 8b", "GPT 4o", "GPT 3.5-turbo"])
+model_name, model_type = model_select(model)
 
 sidebar = st.sidebar.container()
 col1, col2 = sidebar.columns(2)
@@ -166,8 +206,6 @@ for message in st.session_state.messages:
 
 prompt = st.chat_input("Ask me about the causal graph")
 
-
-
 # ----------------------------------------Langflow----------------------------------------------------------#
 BASE_API_URL = "http://127.0.0.1:7860/api/v1/run"
 FLOW_ID = "b40bf1e6-686d-4bb9-96b4-4e766face139"
@@ -184,7 +222,7 @@ TWEAKS = {
         "template": "This is the explaintion\n" + feature_explaintion + "\n" + "{text}\n Please read the explaintion and take look at \"x\",\"y\",\"imp\",\"co\". For every json object, x and y means two factors that x is a cause of y. The bigger imp(importance) value means x and y have strongger causation. If \"co\" value smaller than 0, that means the bigger x will make smaller y. If \"co\" value bigger than 0, that means the bigger x will make bigger y.\n" + "Anwser user's question base on the flie but use your domain knowledge to interpret and anwser user's question.\n" + " Don't mention about how you found the anwser like Based on the provided JSON objects.\n",
     },
     "File-QXhLH": {
-        "path": current_dir + "/" + saved_file_path,
+        "path": current_dir + "/json_file_storage" + f"/{email}/{project_id}.json",
         "silent_errors": False
     },
     "ChatInput-zhi0V": {
