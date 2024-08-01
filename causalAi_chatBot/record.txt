@@ -73,7 +73,7 @@ Use your own words to interpret this entire document, including all json object 
 24.Anemia(nominal)
 	ane - (yes,no)
 25.Classification (nominal)		
-	Classification - (ckd,notckd) ckd: chronic kidney disease 
+	Classification - (ckd,notckd) ckd: chronic kidney disease
 
 
 

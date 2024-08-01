@@ -4,7 +4,6 @@ from typing import Optional
 import json
 import os
 from dotenv import load_dotenv
-import uuid
 
 
 def run_flow(message: str,
@@ -40,13 +39,11 @@ def format_message(message: str):
     return formatted_message
 
 
-
 def remove_json_object(json_data):
     if isinstance(json_data, str):
         json_data = json.loads(json_data)
-
     if not isinstance(json_data, dict) or 'edges' not in json_data:
-        st.error("Project not exist or invalid JSON file")
+        st.error("Project does not exsist")
         return None
 
     edges = json_data['edges']
@@ -68,22 +65,24 @@ def remove_json_object(json_data):
 
 def try_upload_json(file_content,email,project_id):
     save_dir = f"json_file_storage/{email}"
-    try:
+    file_content = remove_json_object(file_content)  # filter out json objects
 
-        file_content = remove_json_object(file_content)  # filter out json objects
+    if file_content is None:
+        if os.path.exists(current_dir + "/json_file_storage" + f"/{email}/{project_id}.json"):
+            os.remove(current_dir + "/json_file_storage" + f"/{email}/{project_id}.json")
+        return None
+    if not os.path.exists(save_dir):
+        os.makedirs(save_dir)
 
-        if not os.path.exists(save_dir):
-            os.makedirs(save_dir)
+    saved_file_path = os.path.join(save_dir, f"{project_id}.json")
 
-        saved_file_path = os.path.join(save_dir, f"{project_id}.json")
+    with open(saved_file_path, 'w') as file:
+        json.dump(file_content, file, indent=2, ensure_ascii=False)
 
-        with open(saved_file_path, 'w') as file:
-            json.dump(file_content, file, indent=2, ensure_ascii=False)
-        
-        return saved_file_path
-
-    except json.JSONDecodeError:
-        st.error("Invalid JSON file. Please upload a valid JSON file.")
+    # except json.JSONDecodeError:
+    #     st.error("Invalid JSON file. Please upload a valid JSON file.")
+    #     # if os.path.exists(current_dir + "/json_file_storage" + f"/{email}/{project_id}.json"):
+    #     #     os.remove(current_dir + "/json_file_storage" + f"/{email}/{project_id}.json")
 
 
 def model_select(model):
@@ -124,25 +123,23 @@ def request_login(email, password):
         response = requests.post(url, json=payload, headers=headers)
         token = response.json()
         return token['access_token']
-    except requests.exceptions.RequestException as e:
-        st.error(f"Error: {e}")
+    except:
+        st.error("Wrong email or password")
+        return None
 
 
 def request_json(email, password, project_id):
     url = f"http://192.168.50.3:25000/api/v1/dataset_groups/{project_id}/causal_graph/edges"
     access_token = request_login(email, password)
+    if access_token is None:
+        return None
     headers = {
         "Content-Type": "application/json",
         "Authorization": f"Bearer {access_token}"
     }
-
-    try:
-        response = requests.get(url, headers=headers)
-        content = response.json()
-        try_upload_json(content,email,project_id)
-
-    except requests.exceptions.HTTPError as e:
-        st.error(f"Error: {e}")
+    response = requests.get(url, headers=headers)
+    content = response.json()
+    try_upload_json(content,email,project_id)
     
     
     
@@ -152,11 +149,6 @@ def request_json(email, password, project_id):
 
 
 load_dotenv()
-
-if "session_id" not in st.session_state:
-    st.session_state.session_id = str(uuid.uuid4())
-
-sessionID = st.session_state.session_id
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 
@@ -172,11 +164,19 @@ st.sidebar.header("Information to Access")
 email = st.sidebar.text_input("Email", placeholder="Email")
 password = st.sidebar.text_input("Password", placeholder="Password")
 project_id = st.sidebar.text_input("Project ID", placeholder="Project ID")
-
+sessionID = f"{email}-{project_id}"
 
 if st.sidebar.button("Upload Json File", use_container_width=True):
     request_json(email, password, project_id)
+    
 
+
+if os.path.exists(current_dir + "/json_file_storage" + f"/{email}/{project_id}.json"):
+    save_dir = current_dir + "/json_file_storage" + f"/{email}/{project_id}.json"
+    st.success("File uploaded and processed successfully!")
+else:
+    st.error("Please upload the json file first")
+    
 
 st.sidebar.header("Select for conversation")
 
@@ -186,13 +186,16 @@ model_name, model_type = model_select(model)
 sidebar = st.sidebar.container()
 col1, col2 = sidebar.columns(2)
 
+
+
+
 with col1:
     if st.button("New Chat", type="primary", use_container_width=True):
         st.session_state.messages = []
         st.rerun()
 
 with col2:
-    if st.button("Delete Memory", type="primary", use_container_width=True):
+    if st.button("Reset Memory", type="primary", use_container_width=True):
         delete_session(sessionID)
         st.session_state.messages = []
         st.rerun()
@@ -203,6 +206,7 @@ if "messages" not in st.session_state:
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
+
 
 prompt = st.chat_input("Ask me about the causal graph")
 
