@@ -157,7 +157,7 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 
 st.title("Causal AI Chat Bot")
 
-feature_explaintion = st.text_area("Explain your json file or features here (Not required)", placeholder="Type something")  # Can Store it to database
+feature_explaintion = st.text_area("Explain your csv file or features here (Not required)", placeholder="Type something")  # Can Store it to database
 
 st.sidebar.header("Information to Access")
 
@@ -169,7 +169,6 @@ sessionID = f"{email}-{project_id}"
 if st.sidebar.button("Upload Json File", use_container_width=True):
     request_json(email, password, project_id)
     
-
 
 if os.path.exists(current_dir + "/json_file_storage" + f"/{email}/{project_id}.json"):
     save_dir = current_dir + "/json_file_storage" + f"/{email}/{project_id}.json"
@@ -190,12 +189,12 @@ col1, col2 = sidebar.columns(2)
 
 
 with col1:
-    if st.button("New Chat", type="primary", use_container_width=True):
+    if st.button("Clear Dialogue", type="primary", use_container_width=True):
         st.session_state.messages = []
         st.rerun()
 
 with col2:
-    if st.button("Reset Memory", type="primary", use_container_width=True):
+    if st.button("New Chat", type="primary", use_container_width=True):
         delete_session(sessionID)
         st.session_state.messages = []
         st.rerun()
@@ -288,7 +287,7 @@ if model_type == "llama":
         "system": "",
         "system_message": "",
         "tags": "",
-        "temperature": 0.1,
+        "temperature": 0,
         "template": "",
         "tfs_z": None,
         "timeout": None,
@@ -310,7 +309,7 @@ else:
         "seed": 1,
         "stream": False,
         "system_message": "",
-        "temperature": 0.2
+        "temperature": 0
     }
 
 

@@ -17,13 +17,13 @@ ollama run llama3:8b
 
 Please use Traditional Chinese to anwser my next question. 
 
-Please explain the relationship between Blood Glucose Random and Diabetes Mellitusthat base on provideed data, and how to avoid it.
+Please explain the relationship between Blood Glucose Random and Diabetes Mellitusthat and how to avoid it.
 
 Based on the provided data, What factors are the causes of chronic kidney disease(classification), please output the imp value of the factors and explain how to improve it.
 
 Use your own words to interpret this entire document, including all json object and their correlations and importance.
 
-
+please print out the entire file
 
 1.Age(numerical)
 	age in years
