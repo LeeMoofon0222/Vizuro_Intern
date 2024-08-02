@@ -167,13 +167,9 @@ def load_session(session_id):
 load_dotenv()
 
 
-
-
-
-
 current_dir = os.path.dirname(os.path.abspath(__file__))
 
-
+current_project_id = "-1"
 # -----------------------------------------------UI--------------------------------------------------------#
 
 st.title("Causal AI Chat Bot")
@@ -187,6 +183,8 @@ password = st.sidebar.text_input("Password", placeholder="Password")
 project_id = st.sidebar.text_input("Project ID", placeholder="Project ID")
 sessionID = f"{email}-{project_id}"
 
+
+
 if st.sidebar.button("Upload", use_container_width=True):
     request_json(email, password, project_id)
 
@@ -194,7 +192,9 @@ if st.sidebar.button("Upload", use_container_width=True):
 if os.path.exists(current_dir + "/json_file_storage" + f"/{email}/{project_id}.json"):
     save_dir = current_dir + "/json_file_storage" + f"/{email}/{project_id}.json"
     st.success("File uploaded and processed successfully!")
-    load_session(sessionID)
+    if(current_project_id != project_id):
+        load_session(sessionID)
+        current_project_id = project_id
 else:
     st.error("Please upload the json file first")
     
@@ -328,7 +328,7 @@ if model_type == "llama":
         "system": "",
         "system_message": "",
         "tags": "",
-        "temperature": 0.2,
+        "temperature": 0,
         "template": "",
         "tfs_z": None,
         "timeout": None,
@@ -351,7 +351,7 @@ else:
         "seed": 1,
         "stream": False,
         "system_message": "",
-        "temperature": 0.1
+        "temperature": 0
     }
 
 
