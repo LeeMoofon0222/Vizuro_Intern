@@ -5,6 +5,11 @@ import json
 import os
 from dotenv import load_dotenv
 from langflow.components.helpers.Memory import MemoryComponent
+from langflow.services.cache.service import ThreadingInMemoryCache
+from langflow.services.session.factory import SessionServiceFactory
+import asyncio
+
+
 
 def run_flow(message: str,
              endpoint: str,
@@ -163,13 +168,43 @@ def load_session(session_id):
 
 
 
+def post_explaintion(message, session_id):
+    # Instantiate the cache service
+    cache = ThreadingInMemoryCache()
+
+    # Instantiate the session service factory
+    session_service_factory = SessionServiceFactory()
+
+    # Create the session service with the cache service
+    session_service = session_service_factory.create(cache)
+
+    #print("Post explaintion")
+    # Add the message to the session memory
+    session_service.update_session(session_id, {
+        "sender": "User",
+        "sender_name": "User",
+        "text": message,
+        "metadata": {}
+    })
+
+
+
 
 load_dotenv()
-
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 
 current_project_id = "-1"
+
+# Instantiate the cache service
+cache = ThreadingInMemoryCache()
+
+# Instantiate the session service factory
+session_service_factory = SessionServiceFactory()
+
+# Create the session service with the cache service
+session_service = session_service_factory.create(cache)
+
 # -----------------------------------------------UI--------------------------------------------------------#
 
 st.title("Causal AI Chat Bot")
@@ -187,14 +222,15 @@ sessionID = f"{email}-{project_id}"
 
 if st.sidebar.button("Upload", use_container_width=True):
     request_json(email, password, project_id)
+    if(current_project_id != project_id):
+        load_session(sessionID)
+        current_project_id = project_id
 
 
 if os.path.exists(current_dir + "/json_file_storage" + f"/{email}/{project_id}.json"):
     save_dir = current_dir + "/json_file_storage" + f"/{email}/{project_id}.json"
     st.success("File uploaded and processed successfully!")
-    if(current_project_id != project_id):
-        load_session(sessionID)
-        current_project_id = project_id
+    
 else:
     st.error("Please upload the json file first")
     
@@ -230,11 +266,11 @@ prompt = st.chat_input("Ask me about the causal graph")
 
 # ----------------------------------------Langflow----------------------------------------------------------#
 BASE_API_URL = "http://127.0.0.1:7860"
-FLOW_ID = "78cfb727-3ea4-4a66-9eb6-b63162529573"
+FLOW_ID = "51fee3d9-9e0d-42d6-97d7-27c2cc125e39"
 ENDPOINT = "" 
 
 TWEAKS = {
-  "Chroma-1eSTL": {
+  "Chroma-eFYl0": {
     "allow_duplicates": False,
     "chroma_server_cors_allow_origins": "",
     "chroma_server_grpc_port": None,
@@ -248,24 +284,24 @@ TWEAKS = {
     "search_query": "",
     "search_type": "Similarity"
   },
-  "ChatInput-dDm2D": {
+  "ChatInput-DSKRH": {
     "files": "",
     "sender": "User",
     "sender_name": "User",
     "session_id": sessionID
   },
-  "ChatOutput-ogNUN": {
+  "ChatOutput-vPeZC": {
     "data_template": "{text}",
     "input_value": "",
     "sender": "Machine",
     "sender_name": "AI",
     "session_id": ""
   },
-  "ParseData-1k9JW": {
+  "ParseData-LaGkb": {
     "sep": "\n",
     "template": "{text}"
   },
-  "GroupNode-mM4mq": {
+  "GroupNode-F0on4": {
     "path": current_dir + "/json_file_storage" + f"/{email}/{project_id}.json",
     "code": "from typing import List\n\nfrom langchain_text_splitters import CharacterTextSplitter\n\nfrom langflow.custom import CustomComponent\nfrom langflow.schema import Data\nfrom langflow.utils.util import unescape_string\n\n\nclass CharacterTextSplitterComponent(CustomComponent):\n    display_name = \"CharacterTextSplitter\"\n    description = \"Splitting text that looks at characters.\"\n\n    def build_config(self):\n        return {\n            \"inputs\": {\"display_name\": \"Input\", \"input_types\": [\"Document\", \"Data\"]},\n            \"chunk_overlap\": {\"display_name\": \"Chunk Overlap\", \"default\": 200},\n            \"chunk_size\": {\"display_name\": \"Chunk Size\", \"default\": 1000},\n            \"separator\": {\"display_name\": \"Separator\", \"default\": \"\\n\"},\n        }\n\n    def build(\n        self,\n        inputs: List[Data],\n        chunk_overlap: int = 200,\n        chunk_size: int = 1000,\n        separator: str = \"\\n\",\n    ) -> List[Data]:\n        # separator may come escaped from the frontend\n        separator = unescape_string(separator)\n        documents = []\n        for _input in inputs:\n            if isinstance(_input, Data):\n                documents.append(_input.to_lc_document())\n            else:\n                documents.append(_input)\n        docs = CharacterTextSplitter(\n            chunk_overlap=chunk_overlap,\n            chunk_size=chunk_size,\n            separator=separator,\n        ).split_documents(documents)\n        data = self.to_data(docs)\n        self.status = data\n        return data\n",
     "silent_errors": False,
@@ -273,7 +309,7 @@ TWEAKS = {
     "chunk_size": 1000,
     "separator": " "
   },
-  "GroupNode-XBRJ3": {
+  "GroupNode-GeEJt": {
     "code": "from langflow.custom import Component\nfrom langflow.helpers.data import data_to_text\nfrom langflow.io import DropdownInput, IntInput, MessageTextInput, MultilineInput, Output\nfrom langflow.memory import get_messages\nfrom langflow.schema import Data\nfrom langflow.schema.message import Message\n\n\nclass MemoryComponent(Component):\n    display_name = \"Chat Memory\"\n    description = \"Retrieves stored chat messages.\"\n    icon = \"message-square-more\"\n\n    inputs = [\n        DropdownInput(\n            name=\"sender\",\n            display_name=\"Sender Type\",\n            options=[\"Machine\", \"User\", \"Machine and User\"],\n            value=\"Machine and User\",\n            info=\"Type of sender.\",\n            advanced=True,\n        ),\n        MessageTextInput(\n            name=\"sender_name\",\n            display_name=\"Sender Name\",\n            info=\"Name of the sender.\",\n            advanced=True,\n        ),\n        IntInput(\n            name=\"n_messages\",\n            display_name=\"Number of Messages\",\n            value=100,\n            info=\"Number of messages to retrieve.\",\n            advanced=True,\n        ),\n        MessageTextInput(\n            name=\"session_id\",\n            display_name=\"Session ID\",\n            info=\"Session ID of the chat history.\",\n            advanced=True,\n        ),\n        DropdownInput(\n            name=\"order\",\n            display_name=\"Order\",\n            options=[\"Ascending\", \"Descending\"],\n            value=\"Ascending\",\n            info=\"Order of the messages.\",\n            advanced=True,\n        ),\n        MultilineInput(\n            name=\"template\",\n            display_name=\"Template\",\n            info=\"The template to use for formatting the data. It can contain the keys {text}, {sender} or any other key in the message data.\",\n            value=\"{sender_name}: {text}\",\n            advanced=True,\n        ),\n    ]\n\n    outputs = [\n        Output(display_name=\"Chat History\", name=\"messages\", method=\"retrieve_messages\"),\n        Output(display_name=\"Messages (Text)\", name=\"messages_text\", method=\"retrieve_messages_as_text\"),\n    ]\n\n    def retrieve_messages(self) -> Data:\n        sender = self.sender\n        sender_name = self.sender_name\n        session_id = self.session_id\n        n_messages = self.n_messages\n        order = \"DESC\" if self.order == \"Descending\" else \"ASC\"\n\n        if sender == \"Machine and User\":\n            sender = None\n\n        messages = get_messages(\n            sender=sender,\n            sender_name=sender_name,\n            session_id=session_id,\n            limit=n_messages,\n            order=order,\n        )\n        self.status = messages\n        return messages\n\n    def retrieve_messages_as_text(self) -> Message:\n        messages_text = data_to_text(self.template, self.retrieve_messages())\n        self.status = messages_text\n        return Message(text=messages_text)\n",
     "template": "{sender_name}: {text}",
     "context": "",
@@ -284,20 +320,20 @@ TWEAKS = {
     "sender_name": "",
     "session_id": sessionID
   },
-  "OllamaEmbeddings-pPT7t": {
+  "OllamaEmbeddings-FNxrr": {
     "base_url": "http://localhost:11434",
     "model": "llama3:latest",
     "temperature": 0
   },
-  "CombineText-9KPCn": {
+  "CombineText-knZzZ": {
     "delimiter": " ",
     "text1": "",
     "text2": ""
   },
-  "TextInput-habii": {
+  "TextInput-ypjop": {
     "input_value": "This is the file explaintion\n" + feature_explaintion + "\n" + "Please read the explaintion and take look at \"x\",\"y\",\"imp\",\"co\". For every json object, x and y means two factors that x is a cause of y. The bigger imp(importance) value means x and y have strongger causation. If \"co\" value smaller than 0, that means the bigger x will make smaller y. If \"co\" value bigger than 0, that means the bigger x will make bigger y.\n"
   },
-  "CombineText-08Zjg": {
+  "CombineText-gRZlx": {
     "delimiter": " ",
     "text1": "",
     "text2": ""
@@ -307,9 +343,9 @@ TWEAKS = {
 
 
 if model_type == "llama":
-    TWEAKS.pop("OpenAIModel-JrTmO", None)
-    TWEAKS.pop("OllamaModel-4U6xk", None)
-    TWEAKS["OllamaModel-4U6xk"] = {
+    TWEAKS.pop("OpenAIModel-xYqnw", None)
+    TWEAKS.pop("OllamaModel-e5VPm", None)
+    TWEAKS["OllamaModel-e5VPm"] = {
         "base_url": "http://localhost:11434",
         "format": "",
         "input_value": "",
@@ -337,9 +373,9 @@ if model_type == "llama":
         "verbose": False
     }
 else:
-    TWEAKS.pop("OpenAIModel-JrTmO", None)
-    TWEAKS.pop("OllamaModel-4U6xk", None)
-    TWEAKS["OpenAIModel-JrTmO"] = {
+    TWEAKS.pop("OpenAIModel-xYqnw", None)
+    TWEAKS.pop("OllamaModel-e5VPm", None)
+    TWEAKS["OpenAIModel-xYqnw"] = {
         "api_key": os.getenv("OPENAI_API_KEY"),
         "input_value": "",
         "json_mode": False,
@@ -360,6 +396,7 @@ else:
 
 if prompt:
     st.session_state.messages.append({"role": "user", "content": prompt})
+    post_explaintion(feature_explaintion, sessionID)
     with st.chat_message("user"):
         st.markdown(prompt)
 

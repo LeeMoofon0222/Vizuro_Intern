@@ -15,7 +15,7 @@ python -m streamlit run Chatbot.py
 ollama run llama3:8b
 ------------------------------------------------------------------------------------------------------------
 
-Please use Traditional Chinese to anwser my next question. 
+Please use Traditional Chinese to answer my previous question. 
 
 Please explain the relationship between Blood Glucose Random and Diabetes Mellitusthat and how to avoid it.
 
